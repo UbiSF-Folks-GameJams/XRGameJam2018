@@ -59,7 +59,8 @@ public class BreakableObject:MonoBehaviour{
 	            child.GetComponent<Rigidbody>().AddTorque(Random.Range(-explosiveForce, explosiveForce), Random.Range(-explosiveForce, explosiveForce), Random.Range(-explosiveForce, explosiveForce));
 	        }
 			//transform.position.y -=1000;	// Positions the object out of view to avoid further interaction
-	        if (transform.FindChild("particles") != null) transform.FindChild("particles").GetComponent<ParticleEmitter>().emit = false;
+            //killed the particle system ref below as its antiquated and causing errors -jolie
+	        if (transform.FindChild("particles") != null) //transform.FindChild("particles").GetComponent<ParticleSystem>().emission = false;
 	        StartCoroutine(removeColliders());
 	        StartCoroutine(removeRigids());
 	        if (waitForDestroy > 0) { // destroys fragments after "waitForDestroy" delay
