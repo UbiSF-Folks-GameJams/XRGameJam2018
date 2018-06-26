@@ -41,6 +41,10 @@ public class BrainGrabber : MonoBehaviour
     public float mDeactivationBucketSize = 1.0f;
     //The amount per second that the activation bucket falls if you switch objects.
     public float mActivationLossOnOtherObjectPerSecond = 2.0f;
+    //How close to your eyeline you want to drag movable objects.
+    public float mGrabbedObjectDistance = 1.5f;
+    //
+    public float mAmountToMoveEachFrame = 0.05f;
 
     private static bool mDebugBrainLevels = false;
     private static bool mDebugAttentionLevel = true;
@@ -89,6 +93,20 @@ public class BrainGrabber : MonoBehaviour
                 break;
         }
         stateTimer += Time.deltaTime;
+    }
+
+    public void FixedUpdate()
+    {
+        if ( ( mCurrentState == BrainGrabberStates.Brain_Interacting ) && 
+            ( mCurrentTarget != null ) && mCurrentTarget.CanBeMoved )
+        {
+            Vector3 desiredPosition = transform.position + ( mGrabbedObjectDistance * transform.forward );
+            Rigidbody rb = GetComponent<Rigidbody>();
+            if (rb.isKinematic)
+                rb.MovePosition(Vector3.Lerp(mCurrentTarget.transform.position, desiredPosition, mAmountToMoveEachFrame));
+            else
+                mCurrentTarget.transform.position = Vector3.Lerp(mCurrentTarget.transform.position, desiredPosition, mAmountToMoveEachFrame);
+        }
     }
 
     /****STATE LOGIC****/

@@ -17,11 +17,9 @@ public class BrainAffected : MonoBehaviour
 		
 	}
 
-    public bool CanBeMoved()
-    {
-        return AllowBrainMovement;
-    }
-
+    public bool CanBeMoved
+    { get { return AllowBrainMovement; } }
+    
     public bool IsActivated
     { get { return mActivationAmount >= 1.0f; } }
 
