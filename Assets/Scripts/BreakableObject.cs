@@ -17,9 +17,9 @@ public class BreakableObject:MonoBehaviour{
 	public ParticleSystem breakParticles;			//Assign particle system to apear when object breaks
 	public bool mouseClickDestroy;					//Mouse Click breaks the object
 	Transform fragmentd;							//Stores the fragmented object after break
-	bool broken; 									//Determines if the object has been broken or not 
-	
-	public void OnCollisionEnter(Collision collision) {
+	bool broken;                                    //Determines if the object has been broken or not 
+    private BrainAffected brainFuse;
+    public void OnCollisionEnter(Collision collision) {
 	    if (collision.relativeVelocity.magnitude > durability) {
 	        triggerBreak();
 	    }
@@ -30,8 +30,20 @@ public class BreakableObject:MonoBehaviour{
 			triggerBreak();
 		}
 	}
-	
-	public void triggerBreak() {
+
+    // Update is called once per frame
+    void Update()
+    {
+        if ((brainFuse != null) && !broken && brainFuse.IsActivated)
+            triggerBreak();
+    }
+
+    private void Start()
+    {
+        brainFuse = GetComponent<BrainAffected>();
+    }
+
+    public void triggerBreak() {
 	    Destroy(transform.FindChild("object").gameObject);
 	    Destroy(transform.GetComponent<Collider>());
 	    Destroy(transform.GetComponent<Rigidbody>());
