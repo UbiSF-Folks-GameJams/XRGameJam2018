@@ -4009,7 +4009,7 @@ public enum VROverlayInputMethod
 }
 public enum VROverlayTransformType
 {
-	VROverlayTransform_absolute = 0,
+	VROverlayTransform_Absolute = 0,
 	VROverlayTransform_TrackedDeviceRelative = 1,
 	VROverlayTransform_SystemOverlay = 2,
 	VROverlayTransform_TrackedComponent = 3,
