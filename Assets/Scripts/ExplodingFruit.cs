@@ -5,6 +5,7 @@ using System.Collections.Generic;
 
 public class ExplodingFruit : MonoBehaviour
 {
+    private BrainAffected brainFuse;
 
 	#region fields
 		
@@ -113,10 +114,20 @@ public class ExplodingFruit : MonoBehaviour
 			
 		hasExploded = true;
 	}
-	
-	
-	
-	public void Reset()
+
+    // Update is called once per frame
+    void Update()
+    {
+        if ((brainFuse != null) && !hasExploded && brainFuse.IsActivated)
+            Explode();
+    }
+
+    private void Start()
+    {
+        brainFuse = GetComponent<BrainAffected>();
+    }
+
+    public void Reset()
 	{
 		foreach ( Transform partTransform in origPositions.Keys )
 		{

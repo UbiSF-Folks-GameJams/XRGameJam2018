@@ -28,11 +28,11 @@ public class BrainGrabber : MonoBehaviour
     //The VR head rig itself.
     public GameObject mCameraFacing;
     //The layer of objects we'll allow the brain can manipulate.
-    LayerMask brainAffectedLayer;
+    public LayerMask brainAffectedLayer;
     //How far the head laser extends.
     public float mLaserVisibleDistance = 100.0f;
     //The amount of time within which we're just grabbing a resting state to compare against.
-    public float mGatheringBaselineTime = 10.0f;
+    public float mGatheringBaselineTime = 1.0f;
     //The amount of deviation from the baseline we require before we start filling the activation "bucket".
     public float mRequiredDeviation = 0.2f;
     //The total deviation-over-time bucket that you have to fill to activate the object.
@@ -42,7 +42,7 @@ public class BrainGrabber : MonoBehaviour
     //The amount per second that the activation bucket falls if you switch objects.
     public float mActivationLossOnOtherObjectPerSecond = 2.0f;
 
-    private static bool mDebugBrainLevels = true;
+    private static bool mDebugBrainLevels = false;
     private static bool mDebugAttentionLevel = true;
     private int NumberOfWaves = 5;
     private BrainAffected mCurrentTarget;
@@ -107,6 +107,9 @@ public class BrainGrabber : MonoBehaviour
         {
             mBrainWaveBaseline[index] = ((stateTimer * mBrainWaveBaseline[index]) + (Time.deltaTime * mBrainWaves[index])) / (stateTimer + Time.deltaTime);
         }
+        if (stateTimer > mGatheringBaselineTime)
+            EnterState(BrainGrabberStates.Brain_NotInteracting);
+        Debug.Log("Initializing! " + stateTimer + " out of " + mGatheringBaselineTime );
     }
 
     private void NotInteractingState()
@@ -120,7 +123,7 @@ public class BrainGrabber : MonoBehaviour
         //If this frame's look target is the same as the saved one, accumulate attention!
         if (thisFrameLookTarget == mCurrentTarget)
         {
-            AccumulateActivation(1.0f, 1.0f, true );
+            AccumulateActivation(1.0f, 0.1f, true );
             if (mCurrentAttention > mActivationBucketSize)
                 EnterState(BrainGrabberStates.Brain_Interacting);
         }
@@ -130,7 +133,11 @@ public class BrainGrabber : MonoBehaviour
             mCurrentAttention = Mathf.Clamp(mCurrentAttention - (Time.deltaTime * mActivationLossOnOtherObjectPerSecond),
                 0.0f, Mathf.Infinity);
             if (mCurrentAttention <= 0.0f)
+            {
                 mCurrentTarget = thisFrameLookTarget;
+                //if ( mCurrentTarget != null )
+                //    SetColorOfObject(mCurrentTarget.gameObject);
+            }
         }
         //If we have a valid target, pass the current activation levels along to it. Rescale to 0-1 
         if (mCurrentTarget != null)
@@ -177,11 +184,18 @@ public class BrainGrabber : MonoBehaviour
     {
         //Then figure out what object is at the other end of that raytrace.
         RaycastHit aRaycastReturn;
-        bool hitAThing = Physics.Raycast(mCameraFacing.transform.position, mCameraFacing.transform.forward, out aRaycastReturn, mLaserVisibleDistance, 0);
+        bool hitAThing = Physics.Raycast(mCameraFacing.transform.position, mCameraFacing.transform.forward, out aRaycastReturn, mLaserVisibleDistance, brainAffectedLayer.value);
         if (!hitAThing)
             return null;
+        Debug.Log("Raycast hit!");
         //If the brain (or controller for now) is engaged, start affecting/moving the targeted object.
+        if (aRaycastReturn.transform.gameObject != null)
+        {
+            Debug.Log("Raycast hit " + aRaycastReturn.transform.gameObject.name);
+            Debug.DrawLine( mCameraFacing.transform.position, aRaycastReturn.point, Color.green );
+        }
         BrainAffected theBrainPart = aRaycastReturn.transform.GetComponent<BrainAffected>();
+        
         return theBrainPart;
         
     }
@@ -198,7 +212,7 @@ public class BrainGrabber : MonoBehaviour
     private void DrawheadLine()
     {
         Debug.DrawLine(mCameraFacing.transform.position, 
-            mCameraFacing.transform.position + (mLaserVisibleDistance * mCameraFacing.transform.forward));
+            mCameraFacing.transform.position + (mLaserVisibleDistance * mCameraFacing.transform.forward), Color.red);
     }
 
     private void AccumulateActivation(float positiveMultiplier = 1.0f, float negativeMultiplier = 0.0f, bool zeroOutBelowBaseline = true )
@@ -218,15 +232,31 @@ public class BrainGrabber : MonoBehaviour
         float thisFrameDeviation = thisFrameDelta - (mRequiredDeviation * mBrainWaveTotalBaseline);
         //If the deviation is negative (aka its within the baseline) use our negative multiplier.
         mCurrentAttention += ( (thisFrameDeviation < 0.0f ) ? negativeMultiplier : positiveMultiplier ) * Time.deltaTime * thisFrameDeviation;
+        mCurrentAttention = Mathf.Clamp(mCurrentAttention, 0.0f, Mathf.Infinity);
         if (mDebugAttentionLevel)
-            Debug.Log("Attention level = " + mCurrentAttention + " for object " + mCurrentTarget);
+            Debug.Log("Attention level = " + mCurrentAttention + " for object " + (( mCurrentTarget == null) ? "null" : mCurrentTarget.name));
     }
 
-    private float AverageArray( float[] theWaves )
+    private float AverageArray( float[] theWaves, bool excludeNANsAndINFs = true )
     {
         float total = 0.0f;
+        int totalSamples = theWaves.Length;
         for (int index = 0; index < theWaves.Length; ++index)
-            total += theWaves[index];
-        return total / theWaves.Length;
+        {
+            if ((theWaves[index] <= -100000.0f) || (theWaves[index] >= 100000.0f))
+                --totalSamples;
+            else
+                total += theWaves[index];
+        }
+        return total / totalSamples;
+    }
+
+    private void SetColorOfObject( GameObject aTarget )
+    {
+        Renderer rend = aTarget.GetComponent<Renderer>();
+
+        //Set the main Color of the Material to green
+        rend.material.shader = Shader.Find("_Color");
+        rend.material.SetColor("_Color", Color.green);
     }
 }
