@@ -5,16 +5,13 @@ using System.Collections.Generic;
 
 public class DemoManager : MonoBehaviour
 {
-	#region fields
-		List<DemoFruit> demoFruits = new List<DemoFruit>();
-		bool isDragging;
-		Vector2 mouseVelocity;
-		DemoFruit slicedFruit;
-	#endregion
-	
-	
-	
-	DemoFruit CheckForFruitUnderCursor()
+    #region fields
+    List<DemoFruit> demoFruits = new List<DemoFruit>();
+    float popTime = 5;
+    #endregion
+
+
+    DemoFruit CheckForFruitUnderCursor()
 	{
 		RaycastHit hit;
 		if ( Physics.Raycast( Camera.main.ScreenPointToRay( Input.mousePosition ), out hit, 1 << 9 ) )
@@ -24,58 +21,45 @@ public class DemoManager : MonoBehaviour
 	}
 	
 	
-	
 	void Start ()
 	{
-		foreach ( ExplodingFruit explodingFruit in FindObjectsOfType( typeof(ExplodingFruit)))
+
+
+        foreach ( ExplodingFruit explodingFruit in FindObjectsOfType( typeof(ExplodingFruit)))
 		{
 			DemoFruit demoFruit = explodingFruit.gameObject.AddComponent<DemoFruit>();
 			demoFruits.Add ( demoFruit );
 			demoFruit.gameObject.layer = 9;
 		}
 	}
-	
-	
-	
-	void Update()
+
+    
+
+    void Update()
 	{
-		if ( Input.GetMouseButtonDown( 0 ) )
+        if ( Input.GetMouseButton( 0 ) )
 		{
 			DemoFruit fruitUnderCursor = CheckForFruitUnderCursor();
-			mouseVelocity = Vector2.zero;
-			
-			if ( fruitUnderCursor != null )
-				fruitUnderCursor.Explode( );
-			else
-				isDragging = true;
+
+            if (fruitUnderCursor != null)
+            {
+                fruitUnderCursor.Tremble();
+
+                if (fruitUnderCursor.getTimeToPop() >= fruitUnderCursor.getPopTime())
+                {
+                    fruitUnderCursor.Explode();
+                    Debug.Log("POP");
+                }
+            }
 		}
 		else if ( Input.GetMouseButtonUp( 0 ))
 		{
 			DemoFruit fruitUnderCursor = CheckForFruitUnderCursor();
-			if ( fruitUnderCursor != null )
-				fruitUnderCursor.Explode( 0.5f * mouseVelocity );
-			isDragging = false;
-			mouseVelocity = Vector2.zero;
-			slicedFruit = null;
-		}
-		else if ( isDragging )
-		{
-			Vector2 currentMouseVelocity = new Vector2(	Input.GetAxis("Mouse X"),
-																					Input.GetAxis("Mouse Y") ) / Time.deltaTime;
-			const float kDampFactor = 0.5f;
-			mouseVelocity = kDampFactor * mouseVelocity + (1-kDampFactor) * currentMouseVelocity;
-			DemoFruit fruitUnderCursor = CheckForFruitUnderCursor();
-			if ( slicedFruit != null && slicedFruit != fruitUnderCursor )
-			{
-				slicedFruit.Explode( 0.5f * mouseVelocity );
-				isDragging = false;
-				mouseVelocity = Vector2.zero;
-				slicedFruit = null;
-			}
-			else if ( slicedFruit == null && fruitUnderCursor != null )
-			{
-				slicedFruit = fruitUnderCursor;
-			}
+            if (fruitUnderCursor != null)
+            {
+                fruitUnderCursor.Deactivate();
+            }
+			
 		}
 	}
 	
