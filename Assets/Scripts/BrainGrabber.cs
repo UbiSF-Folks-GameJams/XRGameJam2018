@@ -48,6 +48,7 @@ public class BrainGrabber : MonoBehaviour
 
     private static bool mDebugBrainLevels = false;
     private static bool mDebugAttentionLevel = true;
+    private static bool mDebugFixedUpdate = true;
     private int NumberOfWaves = 5;
     private BrainAffected mCurrentTarget;
     private BrainGrabberStates mCurrentState;
@@ -97,11 +98,15 @@ public class BrainGrabber : MonoBehaviour
 
     public void FixedUpdate()
     {
+        if (mDebugFixedUpdate)
+            Debug.Log("Enter fixed update!" + mCurrentState + mCurrentTarget );
         if ( ( mCurrentState == BrainGrabberStates.Brain_Interacting ) && 
             ( mCurrentTarget != null ) && mCurrentTarget.CanBeMoved )
         {
             Vector3 desiredPosition = transform.position + ( mGrabbedObjectDistance * transform.forward );
             Rigidbody rb = GetComponent<Rigidbody>();
+            if (mDebugFixedUpdate)
+                Debug.Log("Attempted to move object!");
             if (rb.isKinematic)
                 rb.MovePosition(Vector3.Lerp(mCurrentTarget.transform.position, desiredPosition, mAmountToMoveEachFrame));
             else
@@ -175,7 +180,7 @@ public class BrainGrabber : MonoBehaviour
         //Read brain levels
         ReadBrainlevel();
         //
-        AccumulateActivation(0.0f, 2.0f, true);
+        AccumulateActivation(1.0f, 1.0f, true);
         if (mCurrentAttention <= 0.0f)
             EnterState(BrainGrabberStates.Brain_NotInteracting);
         //On the affected object, consider the attention level at 1.0 until told otherwise.
@@ -189,8 +194,19 @@ public class BrainGrabber : MonoBehaviour
         //Do any state exit logic
         if (mCurrentState == BrainGrabberStates.Brain_Initializing)
             mBrainWaveTotalBaseline = AverageArray( mBrainWaveBaseline );
+        if (mCurrentState == BrainGrabberStates.Brain_Interacting)
+        {
+            //Always throw movable objects when we're done with them
+            if ( (mCurrentTarget != null) && ( mCurrentTarget.CanBeMoved ) )
+            {
+                Rigidbody rb = GetComponent<Rigidbody>();
+                if ( rb != null )
+                    rb.AddForce(transform.forward, ForceMode.Acceleration);
+            }
+        }
         //Set the new state
         mCurrentState = newState;
+        Debug.Log("Entered new state! " + newState);
         stateTimer = 0.0f;
         //Do any state entry logic, if needed
     }
@@ -261,7 +277,7 @@ public class BrainGrabber : MonoBehaviour
         int totalSamples = theWaves.Length;
         for (int index = 0; index < theWaves.Length; ++index)
         {
-            if ((theWaves[index] <= -100000.0f) || (theWaves[index] >= 100000.0f))
+            if ((theWaves[index] <= -100000.0f) || (theWaves[index] >= 100000.0f) || ( theWaves[index] == float.NaN ))
                 --totalSamples;
             else
                 total += theWaves[index];
