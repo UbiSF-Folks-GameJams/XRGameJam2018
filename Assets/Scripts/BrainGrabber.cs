@@ -9,81 +9,224 @@ using UnityEngine;
 
 public enum BrainGrabberStates
 {
-    Brain_NotInteracting,
+    Brain_Initializing, //The state in which the grabber is getting the the baseline brain wave values.
+    Brain_NotInteracting, //
     Brain_Interacting,
+}
+
+public enum BrainWaveNames
+{
+    Alpha = 0,
+    Beta,
+    Delta,
+    Gamma,
+    Theta,
 }
 
 public class BrainGrabber : MonoBehaviour
 {
-    //The VR rig itself
+    //The VR head rig itself.
     public GameObject mCameraFacing;
-    //The layer of things the brain can manipulate
+    //The layer of objects we'll allow the brain can manipulate.
     LayerMask brainAffectedLayer;
-    //How far your head laser extends.
+    //How far the head laser extends.
     public float mLaserVisibleDistance = 100.0f;
+    //The amount of time within which we're just grabbing a resting state to compare against.
+    public float mGatheringBaselineTime = 10.0f;
+    //The amount of deviation from the baseline we require before we start filling the activation "bucket".
+    public float mRequiredDeviation = 0.2f;
+    //The total deviation-over-time bucket that you have to fill to activate the object.
+    public float mActivationBucketSize = 2.0f;
+    //The total deviation-over-time bucket that you have to fill to un-activate the object.
+    public float mDeactivationBucketSize = 1.0f;
+    //The amount per second that the activation bucket falls if you switch objects.
+    public float mActivationLossOnOtherObjectPerSecond = 2.0f;
 
-    //A reference to the tracked controller.
-    //private SteamVR_TrackedObject trackedObj;
-    private BrainAffected currentTarget;
-    private BrainGrabberStates currentState;
-    
+    private static bool mDebugBrainLevels = true;
+    private static bool mDebugAttentionLevel = true;
+    private int NumberOfWaves = 5;
+    private BrainAffected mCurrentTarget;
+    private BrainGrabberStates mCurrentState;
+    private float stateTimer;
+    float[] mBrainWaves;
+    float[] mBrainWaveBaseline;
+    float mBrainWaveTotalBaseline;
+    float mCurrentAttention;
+    //To activate, 
+
     void Awake()
     {
         //trackedObj = GetComponent<SteamVR_TrackedObject>();
+        mBrainWaves = new float[NumberOfWaves];
+        mBrainWaveBaseline = new float[NumberOfWaves];
+        for (int index = 0; index < NumberOfWaves; ++index)
+        {
+            mBrainWaves[index] = 0.0f;
+            mBrainWaveBaseline[index] = 0.0f;
+        }
+        mCurrentTarget = null;
+        mCurrentAttention = 0.0f;
     }
 
     // Use this for initialization
     void Start ()
     {
-        currentState = BrainGrabberStates.Brain_NotInteracting;
+        EnterState( BrainGrabberStates.Brain_Initializing );
 	}
 	
 	void Update ()
     {
-        switch ( currentState )
+        switch ( mCurrentState )
         {
+            case BrainGrabberStates.Brain_Initializing:
+                InitializingState();
+                break;
             case BrainGrabberStates.Brain_NotInteracting:
-                //Draw a line down the facing line so folks can see it. 
-                Debug.DrawLine(mCameraFacing.transform.position, mCameraFacing.transform.position + (mLaserVisibleDistance * mCameraFacing.transform.forward));
-                if (CheckGrabObject())
-                    currentState = BrainGrabberStates.Brain_Interacting;
+                NotInteractingState();
                 break;
             case BrainGrabberStates.Brain_Interacting:
-                //Read brain levels
-                float amountOfBrainage = ReadBrainlevel();
-                if (currentTarget != null)
-                    currentTarget.ActivationLevel = amountOfBrainage;
-                //If there's no attention, revert to not interacting.
-                if ( (currentTarget == null) || (amountOfBrainage <= 0.0f))
-                    currentState = BrainGrabberStates.Brain_NotInteracting;
+                InteractingState();
                 break;
         }
-        
+        stateTimer += Time.deltaTime;
     }
 
-    private bool CheckGrabObject()
+    /****STATE LOGIC****/
+
+    private void InitializingState()
+    {
+        int index;
+
+        //Each frame, gather data (INSERT API HERE)
+        for (index = 0; index < NumberOfWaves; ++index)
+        {
+            mBrainWaves[index] = Random.Range(0.0f, 1.0f);
+        }
+        //Then average that new data with the accumulated data.
+        for (index = 0; index < NumberOfWaves; ++index)
+        {
+            mBrainWaveBaseline[index] = ((stateTimer * mBrainWaveBaseline[index]) + (Time.deltaTime * mBrainWaves[index])) / (stateTimer + Time.deltaTime);
+        }
+    }
+
+    private void NotInteractingState()
+    {
+        //Draw a line down the facing line so folks can see it. 
+        DrawheadLine();
+        //Read the current frame of brain data
+        ReadBrainlevel();
+        //Try to get an object.
+        BrainAffected thisFrameLookTarget = CheckGrabObject();
+        //If this frame's look target is the same as the saved one, accumulate attention!
+        if (thisFrameLookTarget == mCurrentTarget)
+        {
+            AccumulateActivation(1.0f, 1.0f, true );
+            if (mCurrentAttention > mActivationBucketSize)
+                EnterState(BrainGrabberStates.Brain_Interacting);
+        }
+        //If this frame's look target is different, reduce attention on the current, and switch if the threshold is low enough.
+        else
+        {
+            mCurrentAttention = Mathf.Clamp(mCurrentAttention - (Time.deltaTime * mActivationLossOnOtherObjectPerSecond),
+                0.0f, Mathf.Infinity);
+            if (mCurrentAttention <= 0.0f)
+                mCurrentTarget = thisFrameLookTarget;
+        }
+        //If we have a valid target, pass the current activation levels along to it. Rescale to 0-1 
+        if (mCurrentTarget != null)
+            mCurrentTarget.ActivationLevel = Mathf.Clamp01( mCurrentAttention / mActivationBucketSize );
+    }
+
+    private void InteractingState()
+    {
+        //If for some reason we've lost our target, drop out of this state immediately.
+        if ( mCurrentTarget == null )
+        {
+            EnterState(BrainGrabberStates.Brain_NotInteracting);
+            return;
+        }
+        //Outline the affected object.
+        //We don't allow object switching until you've "let go" of the current object. So no need to check current head-aim.
+        //Read brain levels
+        ReadBrainlevel();
+        //
+        AccumulateActivation(0.0f, 2.0f, true);
+        if (mCurrentAttention <= 0.0f)
+            EnterState(BrainGrabberStates.Brain_NotInteracting);
+        //On the affected object, consider the attention level at 1.0 until told otherwise.
+        mCurrentTarget.ActivationLevel = 1.0f;
+    }
+
+    private void EnterState(BrainGrabberStates newState)
+    {
+        if (newState == mCurrentState)
+            return;
+        //Do any state exit logic
+        if (mCurrentState == BrainGrabberStates.Brain_Initializing)
+            mBrainWaveTotalBaseline = AverageArray( mBrainWaveBaseline );
+        //Set the new state
+        mCurrentState = newState;
+        stateTimer = 0.0f;
+        //Do any state entry logic, if needed
+    }
+
+    /****UTILITY METHODS****/
+
+    //If the headset is currently pointing at an object that has a brain-affected script, return it.
+    private BrainAffected CheckGrabObject()
     {
         //Then figure out what object is at the other end of that raytrace.
         RaycastHit aRaycastReturn;
         bool hitAThing = Physics.Raycast(mCameraFacing.transform.position, mCameraFacing.transform.forward, out aRaycastReturn, mLaserVisibleDistance, 0);
         if (!hitAThing)
-            return false;
+            return null;
         //If the brain (or controller for now) is engaged, start affecting/moving the targeted object.
         BrainAffected theBrainPart = aRaycastReturn.transform.GetComponent<BrainAffected>();
-        if (theBrainPart == null)
-            return false;
-        currentTarget = theBrainPart;
-        return true;
+        return theBrainPart;
+        
     }
 
-    private float ReadBrainlevel()
+    private void ReadBrainlevel( )
     {
-        //EIGENVALUE MADNESS GOES HERE
-        return 1.0f;
+        //Each frame, gather data (INSERT API HERE)
+        for (int index = 0; index < NumberOfWaves; ++index)
+        {
+            mBrainWaves[index] = Random.Range(0.0f, 1.0f);
+        }
     }
 
-    /*private SteamVR_Controller.Device Controller
+    private void DrawheadLine()
     {
-        get { return SteamVR_Controller.Input((int)trackedObj.index); }
-    }*/
+        Debug.DrawLine(mCameraFacing.transform.position, 
+            mCameraFacing.transform.position + (mLaserVisibleDistance * mCameraFacing.transform.forward));
+    }
+
+    private void AccumulateActivation(float positiveMultiplier = 1.0f, float negativeMultiplier = 0.0f, bool zeroOutBelowBaseline = true )
+    {
+        //Average existing brainwaves.
+        float thisFramesWaves = AverageArray( mBrainWaves );
+        if (mDebugBrainLevels)
+            Debug.Log("Currenet brain level = " + thisFramesWaves + " against baseline " + mBrainWaveTotalBaseline);
+        //Get the delta between this frame's brainwaves and the baseline.
+        float thisFrameDelta = thisFramesWaves - mBrainWaveTotalBaseline;
+        //if we zero out on negative, do this check here.
+        if (zeroOutBelowBaseline)
+            thisFrameDelta = Mathf.Clamp(thisFrameDelta, 0.0f, Mathf.Infinity);
+        else
+            thisFrameDelta = Mathf.Abs(thisFrameDelta);
+        //How far above our threshold is this frame?
+        float thisFrameDeviation = thisFrameDelta - (mRequiredDeviation * mBrainWaveTotalBaseline);
+        //If the deviation is negative (aka its within the baseline) use our negative multiplier.
+        mCurrentAttention += ( (thisFrameDeviation < 0.0f ) ? negativeMultiplier : positiveMultiplier ) * Time.deltaTime * thisFrameDeviation;
+        if (mDebugAttentionLevel)
+            Debug.Log("Attention level = " + mCurrentAttention + " for object " + mCurrentTarget);
+    }
+
+    private float AverageArray( float[] theWaves )
+    {
+        float total = 0.0f;
+        for (int index = 0; index < theWaves.Length; ++index)
+            total += theWaves[index];
+        return total / theWaves.Length;
+    }
 }
