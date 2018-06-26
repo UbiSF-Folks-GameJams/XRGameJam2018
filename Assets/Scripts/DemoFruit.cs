@@ -9,52 +9,80 @@ public class DemoFruit : MonoBehaviour
 	
 		enum State {
 			ShowingFruit,
+            TrembleFruit,
 			ExplodingFruit
 		}
 		State state = State.ShowingFruit;
 	
 		Vector3 rotationAxis;
 		float kRotationSpeed;
-		ExplodingFruit explodingFruit;
-	
-	
-	#endregion
-	
-	
-	void Awake()
+        float timeToPop;
+        float popTime = 12000;
+        ExplodingFruit explodingFruit;
+
+
+    #endregion
+
+    public float getTimeToPop()
+    {
+        return timeToPop;
+    }
+
+    public float getPopTime()
+    {
+        return popTime;
+    }
+
+    void Awake()
 	{
-		rotationAxis = UnityEngine.Random.onUnitSphere;
-		kRotationSpeed = 25 * UnityEngine.Random.Range( 8.0f, 12.0f );
 		explodingFruit = GetComponent<ExplodingFruit>();
-	}
-	
-	
-	
-	public void Explode( Vector3? forceVector = null )
+        rotationAxis = UnityEngine.Random.onUnitSphere;
+        state = State.ShowingFruit;
+    }
+
+    public void Tremble()
+    {
+        if (state != State.ShowingFruit) { 
+            return;
+        }
+        state = State.TrembleFruit;
+    }
+
+    public void Deactivate()
+    {
+        timeToPop = 0;
+        kRotationSpeed = 0;
+        state = State.ShowingFruit;
+    }
+
+    public void Explode()
 	{
-		if ( state != State.ShowingFruit )
+		if ( state != State.TrembleFruit )
 			return;
 
-		explodingFruit.Explode( forceVector );
+		explodingFruit.Explode();
 		state = State.ExplodingFruit;
+        //for demo purposes, it reappears after 4 seconds
 		Invoke("Reset", 4);
 	}
-	
-	
-	
 	
 	void Reset()
 	{
 		explodingFruit.Reset();
-		state = State.ShowingFruit;
+        kRotationSpeed = 0;
+        state = State.ShowingFruit;
 	}
-	
 	
 	
 	void Update()
 	{
-		if ( state == State.ShowingFruit )
-			transform.Rotate( rotationAxis, Time.deltaTime * kRotationSpeed );
+        if (state == State.TrembleFruit)
+        {
+            Debug.Log("Tremble Update");
+            timeToPop += 60;
+            kRotationSpeed = 1 * timeToPop;
+            transform.Rotate(rotationAxis, Time.deltaTime * kRotationSpeed);
+        }
 	}
 
 }
