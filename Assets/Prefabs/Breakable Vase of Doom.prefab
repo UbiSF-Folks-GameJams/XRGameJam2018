@@ -55,6 +55,11 @@ GameObject:
   - component: {fileID: 54093474519805074}
   - component: {fileID: 64217680416374438}
   - component: {fileID: 114229427736593644}
+  - component: {fileID: 114257671422660448}
+  - component: {fileID: 114113194805493230}
+  - component: {fileID: 114514733291335524}
+  - component: {fileID: 82957764105015406}
+  - component: {fileID: 114316698691412992}
   m_Layer: 8
   m_Name: Breakable Vase of Doom
   m_TagString: Untagged
@@ -96,7 +101,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1837008814770828}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.934, y: 1.328, z: -0.204}
+  m_LocalPosition: {x: 0.934, y: 1.54, z: -0.193}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4567031781455026}
@@ -155,7 +160,7 @@ Rigidbody:
   m_Mass: 10
   m_Drag: 0
   m_AngularDrag: 0.05
-  m_UseGravity: 1
+  m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
@@ -174,6 +179,117 @@ MeshCollider:
   m_CookingOptions: 14
   m_SkinWidth: 0.01
   m_Mesh: {fileID: 4300000, guid: f54faf9da3d39a24780aa59650c345fe, type: 3}
+--- !u!82 &82957764105015406
+AudioSource:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1837008814770828}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 8300000, guid: d12240a93008c6540934958d2bd5ac56, type: 3}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1.51
+  Loop: 1
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!114 &114113194805493230
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1837008814770828}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40edca45efda98749af1ea93290761e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShakeAmountAtStart: 300
+  ShakeAmountAtEnd: 1200
+  ShakeChangeFrequencyAtStart: 30
+  ShakeChangeFrequencyAtEnd: 1
+  PowerOfShakeCurve: 2
 --- !u!114 &114229427736593644
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -186,6 +302,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   AllowBrainMovement: 0
+--- !u!114 &114257671422660448
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1837008814770828}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd376e22c039b7749b784ad5d4582240, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  DelayBeforeBraining: 2
+  BrainRiseTime: 10
+  RepeatOnFinish: 0
 --- !u!114 &114304017456915986
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -205,3 +335,36 @@ MonoBehaviour:
   durability: 3
   breakParticles: {fileID: 19800000, guid: d6d126eeded58ad4db28605987e9539a, type: 2}
   mouseClickDestroy: 0
+--- !u!114 &114316698691412992
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1837008814770828}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75ddc86627afbac43b572178551ba933, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  finalSound: {fileID: 8300000, guid: ca2ac99ad3733374b8061812f74f625a, type: 3}
+  PitchAtStart: 1
+  PitchAtEnd: 3
+  VolumeAtStart: 0
+  VolumeAtEnd: 2
+  PowerOfAudioCurve: 1.5
+  mStopOnMaxReached: 1
+--- !u!114 &114514733291335524
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1837008814770828}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6944357332450a14fb8bcceadf919ccb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mCameraFOVOnMaxBrainage: 120
+  mCameraReturnToNormalSpeed: 240
+  PowerOfFOVCurve: 3
+  mStopOnMaxReached: 1

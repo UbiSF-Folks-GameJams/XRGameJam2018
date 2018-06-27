@@ -47,7 +47,7 @@ public class BrainGrabber : MonoBehaviour
     public float mAmountToMoveEachFrame = 0.05f;
 
     private static bool mDebugBrainLevels = false;
-    private static bool mDebugAttentionLevel = true;
+    private static bool mDebugAttentionLevel = false;
     private static bool mDebugFixedUpdate = true;
     private int NumberOfWaves = 5;
     private BrainAffected mCurrentTarget;
