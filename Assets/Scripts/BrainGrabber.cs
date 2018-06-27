@@ -66,9 +66,11 @@ public class BrainGrabber : MonoBehaviour
 
     //To activate, 
 
-    public static /*readonly*/ float[] ElenaAtRestValues = { 0.75f, 0.33f, 0.5f, 0.675f, 0.325f };
-    public static readonly float[] ElenaFocusValues = { 0.31f, 0.475f, 0.725f, 0.5f, 0.1f };
-    public static readonly float[] ElenaConsistencyValues = { 1.0f, 0.5f, 0.5f, 0.0f, 0.8f };
+    public static readonly float[] ElenaAtRestValues = { -1.71f, -2.61f, -1.93f, -3.51f, -3.04f };
+    public static readonly float[] ElenaFocusValues = { -2.61f, -1.8f, -2.39f, -1.71f, -3.17f };
+    //-3.36,-2.97,-2.71,-3.38,-3.99]
+    //-2.61,-1.8, -2.39,-1.71,-3.17
+    public static readonly float[] ElenaConsistencyValues = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
     //public static readonly float[] ElenaConsistencyValues = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f };
     void Awake()
     {
@@ -95,7 +97,11 @@ public class BrainGrabber : MonoBehaviour
 	
 	void Update ()
     {
-        
+        mBrainWaves[(int)BrainWaveNames.Alpha] = EEGDataReceiver.alphaAbsolute;
+        mBrainWaves[(int)BrainWaveNames.Beta] = EEGDataReceiver.betaAbsolute;
+        mBrainWaves[(int)BrainWaveNames.Gamma] = EEGDataReceiver.gammaAbsolute;
+        mBrainWaves[(int)BrainWaveNames.Delta] = EEGDataReceiver.deltaAbsolute;
+        mBrainWaves[(int)BrainWaveNames.Theta] = EEGDataReceiver.thetaAbsolute;
 
         switch ( mCurrentState )
         {
@@ -103,11 +109,7 @@ public class BrainGrabber : MonoBehaviour
                 InitializingState();
                 break;
             case BrainGrabberStates.Brain_NotInteracting:
-                mBrainWaves[(int)BrainWaveNames.Alpha] = EEGDataReceiver.alphaAbsolute;
-                mBrainWaves[(int)BrainWaveNames.Beta] = EEGDataReceiver.betaAbsolute;
-                mBrainWaves[(int)BrainWaveNames.Gamma] = EEGDataReceiver.gammaAbsolute;
-                mBrainWaves[(int)BrainWaveNames.Delta] = EEGDataReceiver.deltaAbsolute;
-                mBrainWaves[(int)BrainWaveNames.Theta] = EEGDataReceiver.thetaAbsolute;
+                
                 NotInteractingState();
                 break;
             case BrainGrabberStates.Brain_Interacting:
@@ -286,10 +288,10 @@ public class BrainGrabber : MonoBehaviour
     private void ReadBrainlevel( )
     {
         //Each frame, gather data (INSERT API HERE)
-        for (int index = 0; index < NumberOfWaves; ++index)
+        /*for (int index = 0; index < NumberOfWaves; ++index)
         {
             mBrainWaves[index] = Random.Range(0.0f, 1.0f);
-        }
+        }*/
     }
 
     private void DrawheadLine()
@@ -313,7 +315,7 @@ public class BrainGrabber : MonoBehaviour
         }
         for ( int index = 0; index < NumberOfWaves; ++index )
         {
-            float theUnlerp = Mathf.InverseLerp(mBrainWaveBaseline[index], ElenaFocusValues[index], mBrainWaves[index]);
+            float theUnlerp = Mathf.InverseLerp(ElenaAtRestValues[index], ElenaFocusValues[index], mBrainWaves[index]);
             theUnlerp = Mathf.Lerp(-1.0f, 1.0f, theUnlerp);
             frameScore += ( ElenaConsistencyValues[index] * theUnlerp ) / consistencySum;
         }
@@ -324,16 +326,16 @@ public class BrainGrabber : MonoBehaviour
 
         if (mDebugActualBrains)
         {
-            Debug.Log("Alpha: Resting - " + mBrainWaveBaseline[(int)BrainWaveNames.Alpha] + ", Current - " +
+            Debug.Log("Alpha: Resting - " + ElenaAtRestValues[(int)BrainWaveNames.Alpha] + ", Current - " +
                 mBrainWaves[(int)BrainWaveNames.Alpha] + ", Focused - " + ElenaFocusValues[(int)BrainWaveNames.Alpha] + ", ilerp - " +
-                Mathf.InverseLerp(mBrainWaveBaseline[(int)BrainWaveNames.Alpha], ElenaFocusValues[(int)BrainWaveNames.Alpha], mBrainWaves[(int)BrainWaveNames.Alpha]) );
-            Debug.Log("Beta: Resting - " + mBrainWaveBaseline[(int)BrainWaveNames.Beta] + ", Current - " +
+                Mathf.InverseLerp(ElenaAtRestValues[(int)BrainWaveNames.Alpha], ElenaFocusValues[(int)BrainWaveNames.Alpha], mBrainWaves[(int)BrainWaveNames.Alpha]) );
+            Debug.Log("Beta: Resting - " + ElenaAtRestValues[(int)BrainWaveNames.Beta] + ", Current - " +
                 mBrainWaves[(int)BrainWaveNames.Beta] + ", Focused - " + ElenaFocusValues[(int)BrainWaveNames.Beta]);
-            Debug.Log("Gamma: Resting - " + mBrainWaveBaseline[(int)BrainWaveNames.Gamma] + ", Current - " +
+            Debug.Log("Gamma: Resting - " + ElenaAtRestValues[(int)BrainWaveNames.Gamma] + ", Current - " +
                             mBrainWaves[(int)BrainWaveNames.Gamma] + ", Focused - " + ElenaFocusValues[(int)BrainWaveNames.Gamma]);
-            Debug.Log("Delta: Resting - " + mBrainWaveBaseline[(int)BrainWaveNames.Delta] + ", Current - " +
+            Debug.Log("Delta: Resting - " + ElenaAtRestValues[(int)BrainWaveNames.Delta] + ", Current - " +
                             mBrainWaves[(int)BrainWaveNames.Delta] + ", Focused - " + ElenaFocusValues[(int)BrainWaveNames.Delta]);
-            Debug.Log("Theta: Resting - " + mBrainWaveBaseline[(int)BrainWaveNames.Theta] + ", Current - " +
+            Debug.Log("Theta: Resting - " + ElenaAtRestValues[(int)BrainWaveNames.Theta] + ", Current - " +
                             mBrainWaves[(int)BrainWaveNames.Theta] + ", Focused - " + ElenaFocusValues[(int)BrainWaveNames.Theta]);
             Debug.Log("Consistency sum = " + consistencySum + ", score for frame = " + frameScore);
         }
