@@ -44,12 +44,6 @@ public class DemoManager : MonoBehaviour
             if (fruitUnderCursor != null)
             {
                 fruitUnderCursor.Tremble();
-
-                if (fruitUnderCursor.getTimeToPop() >= fruitUnderCursor.getPopTime())
-                {
-                    fruitUnderCursor.Explode();
-                    Debug.Log("POP");
-                }
             }
 		}
 		else if ( Input.GetMouseButtonUp( 0 ))
