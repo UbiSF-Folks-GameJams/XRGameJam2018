@@ -46,6 +46,9 @@ public class BrainGrabber : MonoBehaviour
     //
     public float mAmountToMoveEachFrame = 0.05f;
 
+    //
+    public float mAccumulatePositive = 1.0f;
+
     private static bool mDebugBrainLevels = false;
     private static bool mDebugAttentionLevel = false;
     private static bool mDebugFixedUpdate = true;
@@ -271,7 +274,8 @@ public class BrainGrabber : MonoBehaviour
             theUnlerp = Mathf.Clamp(-0.5f, 1.5f, theUnlerp);
             frameScore += ElenaConsistencyValues[index] * theUnlerp / consistencySum;
         }
-        mCurrentAttention += Time.deltaTime * frameScore;
+        Debug.Log("Added " + frameScore + " on frame " + Time.time + ".");
+        mCurrentAttention += Time.deltaTime * frameScore * ( ( frameScore > 0.0f ) ? positiveMultiplier : negativeMultiplier  );
 }
 
        /*private void AccumulateActivation(float positiveMultiplier = 1.0f, float negativeMultiplier = 0.0f, bool zeroOutBelowBaseline = true )
