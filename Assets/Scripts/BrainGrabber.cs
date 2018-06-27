@@ -18,8 +18,8 @@ public enum BrainWaveNames
 {
     Alpha = 0,
     Beta,
-    Delta,
     Gamma,
+    Delta,
     Theta,
 }
 
@@ -58,6 +58,10 @@ public class BrainGrabber : MonoBehaviour
     float mBrainWaveTotalBaseline;
     float mCurrentAttention;
     //To activate, 
+
+    public static readonly float[] ElenaAtRestValues = { 0.75f, 0.33f, 0.5f, 0.675f, 0.325f };
+    public static readonly float[] ElenaFocusValues = { 0.31f, 0.475f, 0.725f, 0.5f, 0.1f };
+    public static readonly float[] ElenaConsistencyValues = { 1.0f, 0.5f, 0.5f, 0.0f, 0.8f };
 
     void Awake()
     {
@@ -249,7 +253,28 @@ public class BrainGrabber : MonoBehaviour
             mCameraFacing.transform.position + (mLaserVisibleDistance * mCameraFacing.transform.forward), Color.red);
     }
 
-    private void AccumulateActivation(float positiveMultiplier = 1.0f, float negativeMultiplier = 0.0f, bool zeroOutBelowBaseline = true )
+    private void AccumulateActivation(float positiveMultiplier = 1.0f, float negativeMultiplier = 0.0f, bool zeroOutBelowBaseline = true)
+    {
+        /*public static readonly float[] ElenaAtRestValues = { 0.75f, 0.33f, 0.5f, 0.675f, 0.325f };
+        public static readonly float[] ElenaFocusValues = { 0.31f, 0.475f, 0.725f, 0.5f, 0.1f };
+        public static readonly float[] ElenaConsistencyValues = { 1.0f, 0.5f, 0.5f, 0.0f, 0.8f };**/
+
+        float frameScore = 0.0f;
+        float consistencySum = 0.0f;
+        for (int index = 0; index < NumberOfWaves; ++index)
+        {
+            consistencySum += ElenaConsistencyValues[index];
+        }
+        for ( int index = 0; index < NumberOfWaves; ++index )
+        {
+            float theUnlerp = Mathf.InverseLerp(ElenaAtRestValues[index], ElenaFocusValues[index], mBrainWaves[index]);
+            theUnlerp = Mathf.Clamp(-0.5f, 1.5f, theUnlerp);
+            frameScore += ElenaConsistencyValues[index] * theUnlerp / consistencySum;
+        }
+        mCurrentAttention += Time.deltaTime * frameScore;
+}
+
+       /*private void AccumulateActivation(float positiveMultiplier = 1.0f, float negativeMultiplier = 0.0f, bool zeroOutBelowBaseline = true )
     {
         //Average existing brainwaves.
         float thisFramesWaves = AverageArray( mBrainWaves );
@@ -269,7 +294,7 @@ public class BrainGrabber : MonoBehaviour
         mCurrentAttention = Mathf.Clamp(mCurrentAttention, 0.0f, Mathf.Infinity);
         if (mDebugAttentionLevel)
             Debug.Log("Attention level = " + mCurrentAttention + " for object " + (( mCurrentTarget == null) ? "null" : mCurrentTarget.name));
-    }
+    }*/
 
     private float AverageArray( float[] theWaves, bool excludeNANsAndINFs = true )
     {
