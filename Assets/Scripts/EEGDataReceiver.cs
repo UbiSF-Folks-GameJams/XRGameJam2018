@@ -67,7 +67,7 @@ using OscSimpl.Examples;
             }
            // i = i / 4;
             alphaAbsolute = i;
-            Debug.Log("Alpha: " + i);
+           // Debug.Log("Alpha: " + i);
         }
 
         void OnBeta(OscMessage message)
@@ -87,7 +87,7 @@ using OscSimpl.Examples;
             }
           //  i = i / 4;
         betaAbsolute = i;
-            Debug.Log("Beta" + i);
+         //   Debug.Log("Beta" + i);
         }
 
         void OnDelta(OscMessage message)
@@ -107,7 +107,7 @@ using OscSimpl.Examples;
             }
         //    i = i / 4;
         deltaAbsolute = i;
-            Debug.Log("Delta" + i);
+          //  Debug.Log("Delta" + i);
 
 
         }
@@ -129,7 +129,7 @@ using OscSimpl.Examples;
             }
          //   i = i / 4;
         thetaAbsolute = i;
-            Debug.Log("Theta: " + i);
+         //   Debug.Log("Theta: " + i);
         }
 
         void OnGamma(OscMessage message)
@@ -149,7 +149,7 @@ using OscSimpl.Examples;
             }
         //    i = i / 4;
         gammaAbsolute = i;
-            Debug.Log("Gamma: " +i);
+        //    Debug.Log("Gamma: " +i);
 
 
         }

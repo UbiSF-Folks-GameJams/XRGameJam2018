@@ -50,34 +50,41 @@ public class BrainGrabber : MonoBehaviour
     public float mAccumulatePositive = 1.0f;
 
     private static bool mDebugBrainLevels = false;
-    private static bool mDebugAttentionLevel = false;
-    private static bool mDebugFixedUpdate = true;
+    private static bool mDebugAttentionLevel = true;
+    private static bool mDebugFixedUpdate = false;
+    private static bool mDebugActualBrains = true;
     private int NumberOfWaves = 5;
     private BrainAffected mCurrentTarget;
     private BrainGrabberStates mCurrentState;
     private float stateTimer;
     float[] mBrainWaves;
+    float[] mBrainWaveAccumulator;
     float[] mBrainWaveBaseline;
     float mBrainWaveTotalBaseline;
     float mCurrentAttention;
+    int numSamples;
+
     //To activate, 
 
-    public static readonly float[] ElenaAtRestValues = { 0.75f, 0.33f, 0.5f, 0.675f, 0.325f };
+    public static /*readonly*/ float[] ElenaAtRestValues = { 0.75f, 0.33f, 0.5f, 0.675f, 0.325f };
     public static readonly float[] ElenaFocusValues = { 0.31f, 0.475f, 0.725f, 0.5f, 0.1f };
     public static readonly float[] ElenaConsistencyValues = { 1.0f, 0.5f, 0.5f, 0.0f, 0.8f };
-
+    //public static readonly float[] ElenaConsistencyValues = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f };
     void Awake()
     {
         //trackedObj = GetComponent<SteamVR_TrackedObject>();
         mBrainWaves = new float[NumberOfWaves];
         mBrainWaveBaseline = new float[NumberOfWaves];
+        mBrainWaveAccumulator = new float[NumberOfWaves];
         for (int index = 0; index < NumberOfWaves; ++index)
         {
             mBrainWaves[index] = 0.0f;
             mBrainWaveBaseline[index] = 0.0f;
+            mBrainWaveAccumulator[index] = 0.0f;
         }
         mCurrentTarget = null;
         mCurrentAttention = 0.0f;
+        numSamples = 0;
     }
 
     // Use this for initialization
@@ -88,12 +95,19 @@ public class BrainGrabber : MonoBehaviour
 	
 	void Update ()
     {
+        
+
         switch ( mCurrentState )
         {
             case BrainGrabberStates.Brain_Initializing:
                 InitializingState();
                 break;
             case BrainGrabberStates.Brain_NotInteracting:
+                mBrainWaves[(int)BrainWaveNames.Alpha] = EEGDataReceiver.alphaAbsolute;
+                mBrainWaves[(int)BrainWaveNames.Beta] = EEGDataReceiver.betaAbsolute;
+                mBrainWaves[(int)BrainWaveNames.Gamma] = EEGDataReceiver.gammaAbsolute;
+                mBrainWaves[(int)BrainWaveNames.Delta] = EEGDataReceiver.deltaAbsolute;
+                mBrainWaves[(int)BrainWaveNames.Theta] = EEGDataReceiver.thetaAbsolute;
                 NotInteractingState();
                 break;
             case BrainGrabberStates.Brain_Interacting:
@@ -127,19 +141,47 @@ public class BrainGrabber : MonoBehaviour
     {
         int index;
 
-        //Each frame, gather data (INSERT API HERE)
-        for (index = 0; index < NumberOfWaves; ++index)
+        /*for (index = 0; index < NumberOfWaves; ++index)
         {
             mBrainWaves[index] = Random.Range(0.0f, 1.0f);
-        }
+        }*/
+        /*mBrainWaves[(int)BrainWaveNames.Alpha] = EEGDataReceiver.alphaAbsolute;
+        mBrainWaves[(int)BrainWaveNames.Beta] = EEGDataReceiver.betaAbsolute;
+        mBrainWaves[(int)BrainWaveNames.Gamma] = EEGDataReceiver.gammaAbsolute;
+        mBrainWaves[(int)BrainWaveNames.Delta] = EEGDataReceiver.deltaAbsolute;
+        mBrainWaves[(int)BrainWaveNames.Theta] = EEGDataReceiver.thetaAbsolute;
         //Then average that new data with the accumulated data.
         for (index = 0; index < NumberOfWaves; ++index)
         {
             mBrainWaveBaseline[index] = ((stateTimer * mBrainWaveBaseline[index]) + (Time.deltaTime * mBrainWaves[index])) / (stateTimer + Time.deltaTime);
-        }
+        }*/
+        Debug.Log("Initializing! At time " + stateTimer + " samples are " +
+            EEGDataReceiver.alphaAbsolute + ", " +
+            EEGDataReceiver.betaAbsolute + ", " +
+            EEGDataReceiver.gammaAbsolute + ", " +
+            EEGDataReceiver.deltaAbsolute + ", " +
+            EEGDataReceiver.thetaAbsolute + ".");
+
+        mBrainWaveAccumulator[(int)BrainWaveNames.Alpha] += EEGDataReceiver.alphaAbsolute;
+        mBrainWaveAccumulator[(int)BrainWaveNames.Beta] += EEGDataReceiver.betaAbsolute;
+        mBrainWaveAccumulator[(int)BrainWaveNames.Gamma] += EEGDataReceiver.gammaAbsolute;
+        mBrainWaveAccumulator[(int)BrainWaveNames.Delta] += EEGDataReceiver.deltaAbsolute;
+        mBrainWaveAccumulator[(int)BrainWaveNames.Theta] += EEGDataReceiver.thetaAbsolute;
+        ++numSamples;
+        mBrainWaveBaseline[(int)BrainWaveNames.Alpha] = mBrainWaveAccumulator[(int)BrainWaveNames.Alpha] / (float)numSamples;
+        mBrainWaveBaseline[(int)BrainWaveNames.Beta] = mBrainWaveAccumulator[(int)BrainWaveNames.Beta] / (float)numSamples;
+        mBrainWaveBaseline[(int)BrainWaveNames.Gamma] = mBrainWaveAccumulator[(int)BrainWaveNames.Gamma] / (float)numSamples;
+        mBrainWaveBaseline[(int)BrainWaveNames.Delta] = mBrainWaveAccumulator[(int)BrainWaveNames.Delta] / (float)numSamples;
+        mBrainWaveBaseline[(int)BrainWaveNames.Theta] = mBrainWaveAccumulator[(int)BrainWaveNames.Theta] / (float)numSamples;
         if (stateTimer > mGatheringBaselineTime)
             EnterState(BrainGrabberStates.Brain_NotInteracting);
-        Debug.Log("Initializing! " + stateTimer + " out of " + mGatheringBaselineTime );
+        Debug.Log("Initializing! At time " + stateTimer + " baseline is " +
+            mBrainWaveBaseline[(int)BrainWaveNames.Alpha] + ", " +
+            mBrainWaveBaseline[(int)BrainWaveNames.Beta] + ", " +
+            mBrainWaveBaseline[(int)BrainWaveNames.Delta] + ", " +
+            mBrainWaveBaseline[(int)BrainWaveNames.Gamma] + ", " +
+            mBrainWaveBaseline[(int)BrainWaveNames.Theta] + "." );
+        Debug.Log("alpha accumulator = " + mBrainWaveAccumulator[(int)BrainWaveNames.Alpha]);
     }
 
     private void NotInteractingState()
@@ -153,7 +195,7 @@ public class BrainGrabber : MonoBehaviour
         //If this frame's look target is the same as the saved one, accumulate attention!
         if (thisFrameLookTarget == mCurrentTarget)
         {
-            AccumulateActivation(1.0f, 0.1f, true );
+            AccumulateActivation(1.0f, 1.0f, true );
             if (mCurrentAttention > mActivationBucketSize)
                 EnterState(BrainGrabberStates.Brain_Interacting);
         }
@@ -262,6 +304,7 @@ public class BrainGrabber : MonoBehaviour
         public static readonly float[] ElenaFocusValues = { 0.31f, 0.475f, 0.725f, 0.5f, 0.1f };
         public static readonly float[] ElenaConsistencyValues = { 1.0f, 0.5f, 0.5f, 0.0f, 0.8f };**/
 
+        
         float frameScore = 0.0f;
         float consistencySum = 0.0f;
         for (int index = 0; index < NumberOfWaves; ++index)
@@ -270,13 +313,33 @@ public class BrainGrabber : MonoBehaviour
         }
         for ( int index = 0; index < NumberOfWaves; ++index )
         {
-            float theUnlerp = Mathf.InverseLerp(ElenaAtRestValues[index], ElenaFocusValues[index], mBrainWaves[index]);
-            theUnlerp = Mathf.Clamp(-0.5f, 1.5f, theUnlerp);
-            frameScore += ElenaConsistencyValues[index] * theUnlerp / consistencySum;
+            float theUnlerp = Mathf.InverseLerp(mBrainWaveBaseline[index], ElenaFocusValues[index], mBrainWaves[index]);
+            theUnlerp = Mathf.Lerp(-1.0f, 1.0f, theUnlerp);
+            frameScore += ( ElenaConsistencyValues[index] * theUnlerp ) / consistencySum;
         }
         Debug.Log("Added " + frameScore + " on frame " + Time.time + ".");
         mCurrentAttention += Time.deltaTime * frameScore * ( ( frameScore > 0.0f ) ? positiveMultiplier : negativeMultiplier  );
-}
+
+        mCurrentAttention = Mathf.Clamp(mCurrentAttention, 0.0f, Mathf.Infinity);
+
+        if (mDebugActualBrains)
+        {
+            Debug.Log("Alpha: Resting - " + mBrainWaveBaseline[(int)BrainWaveNames.Alpha] + ", Current - " +
+                mBrainWaves[(int)BrainWaveNames.Alpha] + ", Focused - " + ElenaFocusValues[(int)BrainWaveNames.Alpha] + ", ilerp - " +
+                Mathf.InverseLerp(mBrainWaveBaseline[(int)BrainWaveNames.Alpha], ElenaFocusValues[(int)BrainWaveNames.Alpha], mBrainWaves[(int)BrainWaveNames.Alpha]) );
+            Debug.Log("Beta: Resting - " + mBrainWaveBaseline[(int)BrainWaveNames.Beta] + ", Current - " +
+                mBrainWaves[(int)BrainWaveNames.Beta] + ", Focused - " + ElenaFocusValues[(int)BrainWaveNames.Beta]);
+            Debug.Log("Gamma: Resting - " + mBrainWaveBaseline[(int)BrainWaveNames.Gamma] + ", Current - " +
+                            mBrainWaves[(int)BrainWaveNames.Gamma] + ", Focused - " + ElenaFocusValues[(int)BrainWaveNames.Gamma]);
+            Debug.Log("Delta: Resting - " + mBrainWaveBaseline[(int)BrainWaveNames.Delta] + ", Current - " +
+                            mBrainWaves[(int)BrainWaveNames.Delta] + ", Focused - " + ElenaFocusValues[(int)BrainWaveNames.Delta]);
+            Debug.Log("Theta: Resting - " + mBrainWaveBaseline[(int)BrainWaveNames.Theta] + ", Current - " +
+                            mBrainWaves[(int)BrainWaveNames.Theta] + ", Focused - " + ElenaFocusValues[(int)BrainWaveNames.Theta]);
+            Debug.Log("Consistency sum = " + consistencySum + ", score for frame = " + frameScore);
+        }
+        if (mDebugAttentionLevel)
+            Debug.Log("Attention level = " + mCurrentAttention + " for object " + ((mCurrentTarget == null) ? "null" : mCurrentTarget.name));
+    }
 
        /*private void AccumulateActivation(float positiveMultiplier = 1.0f, float negativeMultiplier = 0.0f, bool zeroOutBelowBaseline = true )
     {
